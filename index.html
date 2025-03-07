@@ -26,14 +26,14 @@
     }
     
     .chessboard {
-     width: 400px;
-	aspect-ratio: 1;
-	margin: auto;
-	box-shadow: 5px 5px 2px 2px hsla(0, 40%, 20%, 0.5);
-	padding: 40px;
-	border: 1px solid #ccc;
-	border-radius: 10px;
-  background-color: #eee;
+	    display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      width: 100%;
+      max-width: 500px;
+      aspect-ratio: 1/1;
+      border: 2px solid #16213e;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+      margin-bottom: 20px;
     }
     
     .cell {
