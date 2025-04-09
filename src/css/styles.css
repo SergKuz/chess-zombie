@@ -54,19 +54,19 @@ h1 {
 }
 
 .cell.white {
-    background-color: #ddd;
+    background-color: #f0d9b5;
 }
 
 .cell.black {
-    background-color: #777;
+    background-color: #b58863;
 }
 
 .cell.highlighted {
-    background-color: #c1fba4;
+    background-color: #9bc866;
 }
 
 .cell.selected {
-    background-color: #ffd3b6;
+    background-color: #f7c06c;
 }
 
 .cell.danger {
@@ -135,8 +135,9 @@ button:hover {
 }
 
 .zombie {
-    color: #ff5e5b;
-    text-shadow: 0 0 3px #ff0000;
+    color: #ff2a2a;
+    text-shadow: 0 0 4px #ff0000;
+    font-weight: bold;
 }
 
 /* Responsive styles */

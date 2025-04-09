@@ -26,7 +26,9 @@ export function initializeGameState() {
         playerPieces: 7, // Not counting the king
         zombieCount: 0,
         zombieSpawnRate: 0.3,
-        specialZombieChance: 0.2
+        specialZombieChance: 0.2,
+        // Add flag to prevent zombies from appearing on middle rows
+        restrictMiddleRows: true
     };
 }
 
@@ -54,6 +56,7 @@ export function resetGame() {
     window.gameState.zombieCount = 0;
     window.gameState.zombieSpawnRate = 0.3;
     window.gameState.specialZombieChance = 0.2;
+    window.gameState.restrictMiddleRows = true;
     
     // Update UI
     const statusElement = document.getElementById('status');
@@ -78,6 +81,11 @@ export function nextTurn() {
     if (window.gameState.turn % 5 === 0) {
         window.gameState.zombieSpawnRate = Math.min(0.7, window.gameState.zombieSpawnRate + 0.05);
         window.gameState.specialZombieChance = Math.min(0.4, window.gameState.specialZombieChance + 0.03);
+        
+        // After turn 10, allow zombies to appear on middle rows
+        if (window.gameState.turn >= 10) {
+            window.gameState.restrictMiddleRows = false;
+        }
     }
     
     // Update the board
@@ -99,47 +107,57 @@ export function nextTurn() {
 function moveZombies() {
     const { board } = window.gameState;
     
-    // Copy the board to avoid movement conflicts
-    const boardCopy = JSON.parse(JSON.stringify(board));
-    
-    // Move each zombie
-    for (let row = 7; row >= 0; row--) {
+    // Find all zombies on the board
+    const zombies = [];
+    for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
-            if (['♟', '♜', '♞', '♝'].includes(boardCopy[row][col])) {
-                let moved = false;
-                
-                switch (boardCopy[row][col]) {
-                    case '♟': // Pawn zombie
-                        moved = moveZombiePawn(row, col);
-                        break;
-                    case '♜': // Rook zombie
-                        moved = moveZombieRook(row, col);
-                        break;
-                    case '♞': // Knight zombie
-                        moved = moveZombieKnight(row, col);
-                        break;
-                    case '♝': // Bishop zombie
-                        moved = moveZombieBishop(row, col);
-                        break;
-                }
+            if (['♟', '♜', '♞', '♝'].includes(board[row][col])) {
+                zombies.push({ row, col, type: board[row][col] });
             }
+        }
+    }
+    
+    // If there are zombies, move only one randomly
+    if (zombies.length > 0) {
+        // Select a random zombie to move
+        const randomIndex = Math.floor(Math.random() * zombies.length);
+        const zombie = zombies[randomIndex];
+        
+        // Move the selected zombie
+        let moved = false;
+        switch (zombie.type) {
+            case '♟': // Pawn zombie
+                moved = moveZombiePawn(zombie.row, zombie.col);
+                break;
+            case '♜': // Rook zombie
+                moved = moveZombieRook(zombie.row, zombie.col);
+                break;
+            case '♞': // Knight zombie
+                moved = moveZombieKnight(zombie.row, zombie.col);
+                break;
+            case '♝': // Bishop zombie
+                moved = moveZombieBishop(zombie.row, zombie.col);
+                break;
         }
     }
 }
 
 // Move zombie pawn
 function moveZombiePawn(row, col) {
-    const { board } = window.gameState;
+    const { board, restrictMiddleRows } = window.gameState;
+    
+    // Check if moving to middle rows is restricted
+    const isMiddleRowRestricted = restrictMiddleRows && (row + 1 === 3 || row + 1 === 4);
     
     // Zombie pawn moves down one square if possible
-    if (row < 7 && !board[row + 1][col]) {
+    if (row < 7 && !board[row + 1][col] && !isMiddleRowRestricted) {
         board[row + 1][col] = board[row][col];
         board[row][col] = '';
         return true;
     }
     
     // Zombie pawn captures diagonally
-    if (row < 7) {
+    if (row < 7 && !isMiddleRowRestricted) {
         // Try left diagonal
         if (col > 0 && board[row + 1][col - 1] && !['♟', '♜', '♞', '♝'].includes(board[row + 1][col - 1])) {
             // Capture player piece
@@ -178,7 +196,7 @@ function moveZombiePawn(row, col) {
 
 // Move zombie rook
 function moveZombieRook(row, col) {
-    const { board } = window.gameState;
+    const { board, restrictMiddleRows } = window.gameState;
     
     // Find the king
     let kingRow = -1, kingCol = -1;
@@ -262,7 +280,10 @@ function moveZombieRook(row, col) {
         const newRow = row + dir.row;
         const newCol = col + dir.col;
         
-        if (isValidPosition(newRow, newCol)) {
+        // Check if moving to middle rows is restricted
+        const isMiddleRowRestricted = restrictMiddleRows && (newRow === 3 || newRow === 4);
+        
+        if (isValidPosition(newRow, newCol) && !isMiddleRowRestricted) {
             if (!board[newRow][newCol]) {
                 // Move to empty cell
                 board[newRow][newCol] = board[row][col];
@@ -455,7 +476,10 @@ function moveZombieBishop(row, col) {
         const newRow = row + dir.row;
         const newCol = col + dir.col;
         
-        if (isValidPosition(newRow, newCol)) {
+        // Check if moving to middle rows is restricted
+        const isMiddleRowRestricted = restrictMiddleRows && (newRow === 3 || newRow === 4);
+        
+        if (isValidPosition(newRow, newCol) && !isMiddleRowRestricted) {
             if (!board[newRow][newCol]) {
                 // Move to empty cell
                 board[newRow][newCol] = board[row][col];
