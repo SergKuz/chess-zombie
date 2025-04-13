@@ -1,6 +1,10 @@
 import { isValidPosition } from './pieces.js';
 import { renderBoard } from './board.js';
 import { updateCounters } from './game.js';
+import { addZombieMoveToHistory } from './ui.js';
+
+// Last zombie move for recording in history
+let lastZombieMove = null;
 
 // Initialize game state
 export function initializeGameState() {
@@ -16,6 +20,10 @@ export function initializeGameState() {
         ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖']
     ];
     
+    // Get difficulty setting
+    const difficultySelect = document.getElementById('difficulty');
+    const difficulty = difficultySelect ? difficultySelect.value : 'medium';
+    
     // Create global game state
     window.gameState = {
         board: JSON.parse(JSON.stringify(initialBoard)),
@@ -28,7 +36,9 @@ export function initializeGameState() {
         zombieSpawnRate: 0.3,
         specialZombieChance: 0.2,
         // Add flag to prevent zombies from appearing on middle rows
-        restrictMiddleRows: true
+        restrictMiddleRows: true,
+        difficulty: difficulty,
+        moveHistory: []
     };
 }
 
@@ -46,6 +56,10 @@ export function resetGame() {
         ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖']
     ];
     
+    // Get difficulty setting
+    const difficultySelect = document.getElementById('difficulty');
+    const difficulty = difficultySelect ? difficultySelect.value : 'medium';
+    
     // Reset game state
     window.gameState.board = JSON.parse(JSON.stringify(initialBoard));
     window.gameState.selectedCell = null;
@@ -57,10 +71,18 @@ export function resetGame() {
     window.gameState.zombieSpawnRate = 0.3;
     window.gameState.specialZombieChance = 0.2;
     window.gameState.restrictMiddleRows = true;
+    window.gameState.difficulty = difficulty;
+    window.gameState.moveHistory = [];
     
     // Update UI
     const statusElement = document.getElementById('status');
     statusElement.textContent = "Move your King to the opposite side!";
+    
+    // Clear move history
+    const moveListElement = document.getElementById('move-list');
+    if (moveListElement) {
+        moveListElement.innerHTML = '';
+    }
     
     // Render board and update counters
     renderBoard();
@@ -88,6 +110,9 @@ export function nextTurn() {
         }
     }
     
+    // Record zombie move in history
+    recordZombieMove();
+    
     // Update the board
     renderBoard();
     
@@ -103,6 +128,16 @@ export function nextTurn() {
     }
 }
 
+// Function to record zombie moves in the move history
+function recordZombieMove() {
+    // If there's a last zombie move recorded, add it to the history
+    if (lastZombieMove) {
+        const { piece, fromRow, fromCol, toRow, toCol, capturedPiece } = lastZombieMove;
+        addZombieMoveToHistory(piece, fromRow, fromCol, toRow, toCol, capturedPiece);
+        lastZombieMove = null; // Reset after recording
+    }
+}
+
 // Handle zombie movement
 function moveZombies() {
     const { board } = window.gameState;
@@ -111,7 +146,7 @@ function moveZombies() {
     const zombies = [];
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
-            if (['♟', '♜', '♞', '♝'].includes(board[row][col])) {
+            if (['♟', '♜', '♞', '♝', '♛'].includes(board[row][col])) {
                 zombies.push({ row, col, type: board[row][col] });
             }
         }
@@ -145,13 +180,24 @@ function moveZombies() {
 // Move zombie pawn
 function moveZombiePawn(row, col) {
     const { board, restrictMiddleRows } = window.gameState;
+    const zombiePiece = board[row][col];
     
     // Check if moving to middle rows is restricted
     const isMiddleRowRestricted = restrictMiddleRows && (row + 1 === 3 || row + 1 === 4);
     
     // Zombie pawn moves down one square if possible
     if (row < 7 && !board[row + 1][col] && !isMiddleRowRestricted) {
-        board[row + 1][col] = board[row][col];
+        // Store the move for recording in history
+        lastZombieMove = {
+            piece: zombiePiece,
+            fromRow: row,
+            fromCol: col,
+            toRow: row + 1,
+            toCol: col,
+            capturedPiece: null
+        };
+        
+        board[row + 1][col] = zombiePiece;
         board[row][col] = '';
         return true;
     }
@@ -159,9 +205,22 @@ function moveZombiePawn(row, col) {
     // Zombie pawn captures diagonally
     if (row < 7 && !isMiddleRowRestricted) {
         // Try left diagonal
-        if (col > 0 && board[row + 1][col - 1] && !['♟', '♜', '♞', '♝'].includes(board[row + 1][col - 1])) {
+        if (col > 0 && board[row + 1][col - 1] && !['♟', '♜', '♞', '♝', '♛'].includes(board[row + 1][col - 1])) {
+            // Get the captured piece
+            const capturedPiece = board[row + 1][col - 1];
+            
+            // Store the move for recording in history
+            lastZombieMove = {
+                piece: zombiePiece,
+                fromRow: row,
+                fromCol: col,
+                toRow: row + 1,
+                toCol: col - 1,
+                capturedPiece: capturedPiece
+            };
+            
             // Capture player piece
-            if (board[row + 1][col - 1] !== '♔') {
+            if (capturedPiece !== '♔') {
                 window.gameState.playerPieces--;
             } else {
                 window.gameState.gameOver = true;
@@ -169,15 +228,28 @@ function moveZombiePawn(row, col) {
                 statusElement.textContent = 'Game Over! Your King was captured!';
             }
             
-            board[row + 1][col - 1] = board[row][col];
+            board[row + 1][col - 1] = zombiePiece;
             board[row][col] = '';
             return true;
         }
         
         // Try right diagonal
-        if (col < 7 && board[row + 1][col + 1] && !['♟', '♜', '♞', '♝'].includes(board[row + 1][col + 1])) {
+        if (col < 7 && board[row + 1][col + 1] && !['♟', '♜', '♞', '♝', '♛'].includes(board[row + 1][col + 1])) {
+            // Get the captured piece
+            const capturedPiece = board[row + 1][col + 1];
+            
+            // Store the move for recording in history
+            lastZombieMove = {
+                piece: zombiePiece,
+                fromRow: row,
+                fromCol: col,
+                toRow: row + 1,
+                toCol: col + 1,
+                capturedPiece: capturedPiece
+            };
+            
             // Capture player piece
-            if (board[row + 1][col + 1] !== '♔') {
+            if (capturedPiece !== '♔') {
                 window.gameState.playerPieces--;
             } else {
                 window.gameState.gameOver = true;
@@ -185,7 +257,7 @@ function moveZombiePawn(row, col) {
                 statusElement.textContent = 'Game Over! Your King was captured!';
             }
             
-            board[row + 1][col + 1] = board[row][col];
+            board[row + 1][col + 1] = zombiePiece;
             board[row][col] = '';
             return true;
         }
@@ -507,7 +579,7 @@ function moveZombieBishop(row, col) {
 
 // Spawn zombies on the top row
 function spawnZombies() {
-    const { board } = window.gameState;
+    const { board, difficulty } = window.gameState;
     
     // Find king position to avoid spawning next to it
     let kingRow = -1, kingCol = -1;
@@ -532,15 +604,32 @@ function spawnZombies() {
         
         // Random chance to spawn a zombie
         if (Math.random() < window.gameState.zombieSpawnRate) {
-            // Decide zombie type (pawn vs special)
-            if (Math.random() < window.gameState.specialZombieChance) {
-                // Special zombie
-                const specialTypes = ['♜', '♞', '♝']; // rook, knight, bishop
-                const zombieType = specialTypes[Math.floor(Math.random() * specialTypes.length)];
-                board[0][col] = zombieType;
-            } else {
-                // Pawn zombie
+            // Decide zombie type based on difficulty
+            if (difficulty === 'easy') {
+                // Only pawn zombies in easy mode
                 board[0][col] = '♟';
+            } else if (difficulty === 'medium') {
+                // Decide zombie type (pawn vs special)
+                if (Math.random() < window.gameState.specialZombieChance) {
+                    // Special zombie (rook, knight, bishop)
+                    const specialTypes = ['♜', '♞', '♝'];
+                    const zombieType = specialTypes[Math.floor(Math.random() * specialTypes.length)];
+                    board[0][col] = zombieType;
+                } else {
+                    // Pawn zombie
+                    board[0][col] = '♟';
+                }
+            } else if (difficulty === 'hard') {
+                // Hard mode includes queens
+                if (Math.random() < window.gameState.specialZombieChance) {
+                    // Special zombie (rook, knight, bishop, queen)
+                    const specialTypes = ['♜', '♞', '♝', '♛']; // Added queen
+                    const zombieType = specialTypes[Math.floor(Math.random() * specialTypes.length)];
+                    board[0][col] = zombieType;
+                } else {
+                    // Pawn zombie
+                    board[0][col] = '♟';
+                }
             }
             
             window.gameState.zombieCount++;

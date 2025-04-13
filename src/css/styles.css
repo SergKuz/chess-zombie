@@ -15,7 +15,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    max-width: 600px;
+    max-width: 900px;
     width: 100%;
 }
 
@@ -77,6 +77,26 @@ h1 {
     background-color: #a0c4ff;
 }
 
+/* Game container styles */
+.game-container {
+    display: flex;
+    width: 100%;
+    gap: 20px;
+    justify-content: center;
+}
+
+.left-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 600px;
+}
+
+.right-panel {
+    width: 250px;
+    min-width: 250px;
+}
+
 /* Game info styles */
 .game-info {
     background-color: #16213e;
@@ -134,6 +154,80 @@ button:hover {
     font-size: 14px;
 }
 
+/* Difficulty selector styles */
+.difficulty-selector {
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.difficulty-selector label {
+    font-weight: bold;
+}
+
+.difficulty-selector select {
+    background-color: #2c73d2;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+/* Move history styles */
+.move-history {
+    background-color: #16213e;
+    padding: 15px 20px;
+    border-radius: 8px;
+    height: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.move-history h2 {
+    margin-top: 0;
+    text-align: center;
+    color: #ffd3b6;
+    margin-bottom: 15px;
+}
+
+#move-list {
+    overflow-y: auto;
+    flex-grow: 1;
+    font-size: 14px;
+    line-height: 1.5;
+    padding-right: 5px;
+    max-height: 500px;
+}
+
+.move-entry {
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #2c3e50;
+    display: flex;
+}
+
+.move-number {
+    min-width: 30px;
+    font-weight: bold;
+    color: #a0c4ff;
+}
+
+.player-move {
+    flex-grow: 1;
+    color: #9bc866;
+}
+
+.zombie-move {
+    flex-grow: 1;
+    color: #ff7e67;
+}
+
 .zombie {
     color: #ff2a2a;
     text-shadow: 0 0 4px #ff0000;
@@ -141,6 +235,22 @@ button:hover {
 }
 
 /* Responsive styles */
+@media (max-width: 900px) {
+    .game-container {
+        flex-direction: column;
+    }
+    
+    .right-panel {
+        width: 100%;
+        max-width: 400px;
+        margin-top: 20px;
+    }
+    
+    #move-list {
+        max-height: 200px;
+    }
+}
+
 @media (max-width: 500px) {
     .chessboard {
         grid-template-columns: repeat(8, 40px);
@@ -153,7 +263,7 @@ button:hover {
         font-size: 24px;
     }
     
-    .game-info, .instructions {
+    .game-info, .instructions, .right-panel {
         max-width: 320px;
     }
 }

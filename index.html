@@ -13,27 +13,46 @@
         </header>
         
         <main>
-            <div class="game-info">
-                <div class="status" id="status">Move your King to the opposite side!</div>
-                <div class="stats">
-                    <div>Turn: <span id="turn-counter">1</span></div>
-                    <div>Zombies: <span id="zombie-counter">0</span></div>
-                    <div>Pieces: <span id="pieces-counter">7</span></div>
+            <div class="game-container">
+                <div class="left-panel">
+                    <div class="game-info">
+                        <div class="status" id="status">Move your King to the opposite side!</div>
+                        <div class="stats">
+                            <div>Turn: <span id="turn-counter">1</span></div>
+                            <div>Zombies: <span id="zombie-counter">0</span></div>
+                            <div>Pieces: <span id="pieces-counter">7</span></div>
+                        </div>
+                        <div class="difficulty-selector">
+                            <label for="difficulty">Difficulty:</label>
+                            <select id="difficulty">
+                                <option value="easy">Easy (Pawns only)</option>
+                                <option value="medium" selected>Medium (Pawns, Knights, Bishops, Rooks)</option>
+                                <option value="hard">Hard (All pieces including Queen)</option>
+                            </select>
+                        </div>
+                        <div class="controls">
+                            <button id="reset-button">Reset Game</button>
+                        </div>
+                    </div>
+                    
+                    <div id="chessboard" class="chessboard"></div>
+                    
+                    <div class="instructions">
+                        <p><strong>Goal:</strong> Move your King to the top row while avoiding zombies</p>
+                        <p><strong>Controls:</strong></p>
+                        <p>- Click on a piece to select it, then click on a highlighted square to move</p>
+                        <p>- After your move, zombies will automatically move and new ones may appear</p>
+                        <p>- Most zombies are pawns, but beware special zombies (knights, bishops, rooks)</p>
+                        <p>- Be strategic with each move as the game gets progressively harder</p>
+                    </div>
                 </div>
-                <div class="controls">
-                    <button id="reset-button">Reset Game</button>
+                
+                <div class="right-panel">
+                    <div class="move-history">
+                        <h2>Move History</h2>
+                        <div id="move-list"></div>
+                    </div>
                 </div>
-            </div>
-            
-            <div id="chessboard" class="chessboard"></div>
-            
-            <div class="instructions">
-                <p><strong>Goal:</strong> Move your King to the top row while avoiding zombies</p>
-                <p><strong>Controls:</strong></p>
-                <p>- Click on a piece to select it, then click on a highlighted square to move</p>
-                <p>- After your move, zombies will automatically move and new ones may appear</p>
-                <p>- Most zombies are pawns, but beware special zombies (knights, bishops, rooks)</p>
-                <p>- Be strategic with each move as the game gets progressively harder</p>
             </div>
         </main>
     </div>
