@@ -31,6 +31,11 @@ export function getPossibleMoves(row, col, piece, board) {
             // Pawn can move forward one square
             if (isValidPosition(row - 1, col) && !board[row - 1][col]) {
                 moves.push({ row: row - 1, col: col });
+                
+                // Pawn can move forward two squares on first move (if on starting row 6)
+                if (row === 6 && isValidPosition(row - 2, col) && !board[row - 2][col]) {
+                    moves.push({ row: row - 2, col: col });
+                }
             }
             
             // Pawn can capture diagonally

@@ -54,11 +54,11 @@ h1 {
 }
 
 .cell.white {
-    background-color: #f0d9b5;
+    background-color: #808080; /* Grey */
 }
 
 .cell.black {
-    background-color: #b58863;
+    background-color: #000000; /* Black */
 }
 
 .cell.highlighted {
