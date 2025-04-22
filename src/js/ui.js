@@ -24,20 +24,106 @@ const PIECE_NOTATION = {
 // Selected cell and possible moves
 let selectedCell = null;
 
+// Undo/Redo stacks
+let undoStack = [];
+let redoStack = [];
+
+// Store last move
+let lastMove = null;
+
+// Onboarding overlay logic
+window.addEventListener('DOMContentLoaded', () => {
+    if (!localStorage.getItem('chesszombie_onboarded')) {
+        document.getElementById('onboarding-overlay').style.display = 'flex';
+    }
+    document.getElementById('close-onboarding').onclick = () => {
+        document.getElementById('onboarding-overlay').style.display = 'none';
+        localStorage.setItem('chesszombie_onboarded', '1');
+    };
+});
+
+// Sound helpers
+function playSound(id) {
+    const el = document.getElementById(id);
+    if (el) { el.currentTime = 0; el.play(); }
+}
+
 // Set up event listeners
 export function setupEventListeners() {
     // Get UI elements
     const resetButton = document.getElementById('reset-button');
     const difficultySelect = document.getElementById('difficulty');
-    
+    const hintButton = document.getElementById('hint-button');
+    const undoButton = document.getElementById('undo-button');
+    const redoButton = document.getElementById('redo-button');
+
     // Add event listeners
     resetButton.addEventListener('click', handleResetClick);
-    
-    // Add difficulty change listener
     if (difficultySelect) {
         difficultySelect.addEventListener('change', handleDifficultyChange);
     }
+    if (hintButton) hintButton.addEventListener('click', handleHintClick);
+    if (undoButton) undoButton.addEventListener('click', handleUndoClick);
+    if (redoButton) redoButton.addEventListener('click', handleRedoClick);
 }
+
+// Hint button handler
+function handleHintClick() {
+    // If a piece is selected, highlight a random possible move
+    if (selectedCell && window.gameState.possibleMoves.length > 0) {
+        const move = window.gameState.possibleMoves[Math.floor(Math.random() * window.gameState.possibleMoves.length)];
+        const cell = document.querySelector(`.cell[data-row="${move.row}"][data-col="${move.col}"]`);
+        if (cell) {
+            cell.classList.add('last-move');
+            setTimeout(() => cell.classList.remove('last-move'), 700);
+        }
+    } else {
+        // Otherwise, select a random player piece and highlight a move
+        const { board } = window.gameState;
+        let playerPieces = [];
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if (board[r][c] && !['♟', '♜', '♞', '♝', '♛'].includes(board[r][c])) {
+                    playerPieces.push({ row: r, col: c });
+                }
+            }
+        }
+        if (playerPieces.length > 0) {
+            const piece = playerPieces[Math.floor(Math.random() * playerPieces.length)];
+            selectCell(piece.row, piece.col);
+            setTimeout(() => handleHintClick(), 100); // recurse to highlight
+        }
+    }
+}
+
+// Undo/Redo logic
+function cloneState() {
+    return JSON.parse(JSON.stringify(window.gameState));
+}
+
+function restoreState(state) {
+    window.gameState = JSON.parse(JSON.stringify(state));
+    renderBoard();
+    updateMoveHistoryUI();
+    updateCounters();
+}
+
+function handleUndoClick() {
+    if (undoStack.length > 0) {
+        redoStack.push(cloneState());
+        const prev = undoStack.pop();
+        restoreState(prev);
+    }
+}
+
+function handleRedoClick() {
+    if (redoStack.length > 0) {
+        undoStack.push(cloneState());
+        const next = redoStack.pop();
+        restoreState(next);
+    }
+}
+
 
 // Handle reset button click
 function handleResetClick() {
@@ -65,6 +151,9 @@ function handleNextTurnClick() {
 
 // Handle cell click
 export function handleCellClick(event) {
+    // Remove last-move highlights
+    document.querySelectorAll('.cell.last-move').forEach(cell => cell.classList.remove('last-move'));
+
     if (window.gameState.gameOver) return;
     
     const cell = event.target;
@@ -79,16 +168,27 @@ export function handleCellClick(event) {
             move.row === row && move.col === col);
         
         if (moveIndex !== -1) {
-            // Move the piece
+            // Save state for undo
+            undoStack.push(cloneState());
+            redoStack = [];
+
+            // Animate last move
+            animateMove(selectedCell.row, selectedCell.col, row, col, board);
+
             movePiece(selectedCell.row, selectedCell.col, row, col);
-            
+            playSound('move-sound');
+
+            // Highlight last move
+            highlightLastMove(selectedCell.row, selectedCell.col, row, col);
+
             // Check win condition - King reached the top row
             if (board[row][col] === '♔' && row === 0) {
                 window.gameState.gameOver = true;
                 const statusElement = document.getElementById('status');
                 statusElement.textContent = 'Congratulations! You won!';
+                playSound('gameover-sound');
             }
-            
+
             // Reset selection
             selectedCell = null;
             window.gameState.possibleMoves = [];
@@ -126,6 +226,32 @@ function selectCell(row, col) {
     
     // Highlight possible moves
     highlightPossibleMoves(window.gameState.possibleMoves);
+}
+
+// Animate move/capture
+function animateMove(fromRow, fromCol, toRow, toCol, board) {
+    const fromCell = document.querySelector(`.cell[data-row="${fromRow}"][data-col="${fromCol}"]`);
+    const toCell = document.querySelector(`.cell[data-row="${toRow}"][data-col="${toCol}"]`);
+    if (toCell && board[toRow][toCol]) {
+        toCell.classList.add('animate-capture');
+        playSound('capture-sound');
+        setTimeout(() => toCell.classList.remove('animate-capture'), 300);
+    } else if (fromCell && toCell) {
+        toCell.classList.add('animate-move');
+        setTimeout(() => toCell.classList.remove('animate-move'), 300);
+    }
+}
+
+// Highlight last move
+function highlightLastMove(fromRow, fromCol, toRow, toCol) {
+    const fromCell = document.querySelector(`.cell[data-row="${fromRow}"][data-col="${fromCol}"]`);
+    const toCell = document.querySelector(`.cell[data-row="${toRow}"][data-col="${toCol}"]`);
+    if (fromCell) fromCell.classList.add('last-move');
+    if (toCell) toCell.classList.add('last-move');
+    setTimeout(() => {
+        if (fromCell) fromCell.classList.remove('last-move');
+        if (toCell) toCell.classList.remove('last-move');
+    }, 900);
 }
 
 // Move a piece

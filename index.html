@@ -31,8 +31,11 @@
                             </select>
                         </div>
                         <div class="controls">
-                            <button id="reset-button">Reset Game</button>
-                        </div>
+    <button id="hint-button">Hint</button>
+    <button id="undo-button">Undo</button>
+    <button id="redo-button">Redo</button>
+    <button id="reset-button">Reset Game</button>
+</div>
                     </div>
                     
                     <div id="chessboard" class="chessboard"></div>
@@ -57,6 +60,24 @@
         </main>
     </div>
     
+    <!-- Onboarding overlay -->
+    <div id="onboarding-overlay" style="display:none;">
+        <div class="onboarding-modal">
+            <h2>Welcome to Chess vs Zombies!</h2>
+            <ul>
+                <li>Move your King to the top row while avoiding zombies.</li>
+                <li>Click a piece, then a highlighted square to move.</li>
+                <li>Use <b>Hint</b> for a suggested move, <b>Undo</b>/<b>Redo</b> to step through moves.</li>
+            </ul>
+            <button id="close-onboarding">Got it!</button>
+        </div>
+    </div>
+
+    <!-- Audio elements for sound effects -->
+    <audio id="move-sound" src="src/assets/move.mp3" preload="auto"></audio>
+    <audio id="capture-sound" src="src/assets/capture.mp3" preload="auto"></audio>
+    <audio id="gameover-sound" src="src/assets/gameover.mp3" preload="auto"></audio>
+
     <!-- Use type="module" to enable ES6 modules -->
     <script type="module" src="src/js/game.js"></script>
 </body>
